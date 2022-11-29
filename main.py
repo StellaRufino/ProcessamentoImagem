@@ -14,14 +14,19 @@ barra_menu = [
 ['Salvar', ['Sem qualidade','Thumbnail',
 'Formatos',['BMP','JPEG', 'PNG']]],
 
-['Filtros',['Efeitos', ['Normal','P/B', 'QTD Cor','Sepia','Brilho','Cores','Contraste','Nitidez'],
-'Blur',['SBlur','BoxBlur','GaussianBlur'],
-'Contour','Detail','Edge Enhance','Emboss','Find Edges','Sharpen','Smooth']],
+['Filtros',['Blur',['BoxBlur','GaussianBlur', 'SBlur'],'Efeitos',['Brilho','Contraste','Cores','Nitidez', 'Preto/Branco','Quantidade de Cores','Sem Efeitos','Sepia'
+'Contour','Detail','Edge Enhance','Emboss','Find Edges','Sharpen','Smooth']]],
 
-['Editar ',['Espelhar',['FLIP_LEFT_RIGHT','FLIP_TOP_BOTTOM','TRANSPOSE'],'Recortar','Redimensinar']],
+['Editar',['Espelhar',['FLIP_LEFT_RIGHT','FLIP_TOP_BOTTOM','TRANSPOSE'],'Recortar','Redimensinar']],
 
 ['Ajuda', ['MetaDados','Localização']]
+
 ]
+
+
+
+
+
 
 
 
@@ -30,12 +35,9 @@ def main():
     layout = [
             [sg.Menu(barra_menu)],
      
-            [sg.Graph(key="-IMAGE-", canvas_size=(500,500), graph_bottom_left=(0, 0),
-                    graph_top_right=(400, 400), change_submits=True, drag_submits=True)],
-            [sg.Slider(range=(0, 5), default_value=2, resolution=0.1, orientation="h", enable_events=True, disabled= True,key="-FATOR-")],
-            [sg.Text('X,Y INI:',text_color='WHITE',key="-INI-")],
-            [sg.Text('X,Y FINAL:',text_color='WHITE',key="-FINAL-")],
-            [sg.Button('Recortar',key="-RECORTAR-")],
+            [sg.Graph(key="-IMAGE-", canvas_size=(800,600), graph_bottom_left=(0, 0),
+                    graph_top_right=(400, 500), change_submits=True, drag_submits=True)],
+            
         ]
         
     
