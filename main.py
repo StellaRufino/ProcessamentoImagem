@@ -5,7 +5,8 @@ import PySimpleGUI as sg
 import os
 import tempfile
 
-sg.theme("Dark")
+sg.theme("DarkRed")
+
 
 barra_menu = [
 ['Arquivo', ['Carregar', 'URL']],
@@ -17,7 +18,7 @@ barra_menu = [
 'Blur',['SBlur','BoxBlur','GaussianBlur'],
 'Contour','Detail','Edge Enhance','Emboss','Find Edges','Sharpen','Smooth']],
 
-['Editar ',['Recortar','Redimensinar','Espelhar',['FLIP_TOP_BOTTOM','FLIP_LEFT_RIGHT','TRANSPOSE']]],
+['Editar ',['Espelhar',['FLIP_LEFT_RIGHT','FLIP_TOP_BOTTOM','TRANSPOSE'],'Recortar','Redimensinar']],
 
 ['Ajuda', ['MetaDados','Localização']]
 ]
