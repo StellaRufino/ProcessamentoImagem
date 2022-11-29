@@ -1,41 +1,42 @@
 
-
-from asyncio import events
-from cgitb import text
-from fileinput import filename
-import io
-from msilib.schema import ComboBox
-from multiprocessing import Value
-import os
-from sqlite3 import Row
+from multiprocessing.sharedctypes import Value
+from turtle import position
 import PySimpleGUI as sg
-from PIL import Image
-import webbrowser
-from copy import copy
+import os
+import tempfile
+
+sg.theme("Dark")
+
+barra_menu = [
+['Arquivo', ['Carregar', 'URL']],
+
+['Salvar', ['Sem qualidade','Thumbnail',
+'Formatos',['BMP','JPEG', 'PNG']]],
+
+['Filtros',['Efeitos', ['Normal','P/B', 'QTD Cor','Sepia','Brilho','Cores','Contraste','Nitidez'],
+'Blur',['SBlur','BoxBlur','GaussianBlur'],
+'Contour','Detail','Edge Enhance','Emboss','Find Edges','Sharpen','Smooth']],
+
+['Editar ',['Recortar','Redimensinar','Espelhar',['FLIP_TOP_BOTTOM','FLIP_LEFT_RIGHT','TRANSPOSE']]],
+
+['Ajuda', ['MetaDados','Localização']]
+]
 
 
 
 def main():
     
     layout = [
-        [sg.Image(key="-IMAGE-", size=(500,500)) ],
-        [
-            sg.Text("Arquivo de Imagem"),
-            sg.Input(size=(20,1), key = "-FILE-"),
-            sg.FileBrowse(file_types=[("JPEG(*.jpg)", "*jpg"), ("Todos os arquivos", "*.*")]),
-            sg.Button("Carregar Imagem"),
-            sg.Button("Salvar Imagem"),
-            sg.Button("Salvar Thumb"),
-            sg.Button("Salvar Sem Qualidade"),
-            sg.Button("Pesquisar"),
-            sg.Text("Formato:"),
-            sg.Input(size=(15,1), key = "-FORMAT-"),
-            sg.Button("Salvar Formato")
-            
+            [sg.Menu(barra_menu)],
+     
+            [sg.Graph(key="-IMAGE-", canvas_size=(500,500), graph_bottom_left=(0, 0),
+                    graph_top_right=(400, 400), change_submits=True, drag_submits=True)],
+            [sg.Slider(range=(0, 5), default_value=2, resolution=0.1, orientation="h", enable_events=True, disabled= True,key="-FATOR-")],
+            [sg.Text('X,Y INI:',text_color='WHITE',key="-INI-")],
+            [sg.Text('X,Y FINAL:',text_color='WHITE',key="-FINAL-")],
+            [sg.Button('Recortar',key="-RECORTAR-")],
         ]
-    ]
-
-    salvarImg = 0;
+        
     
     window = sg.Window("Visualizador de Imagem", layout = layout)
     while True:
@@ -62,7 +63,12 @@ def main():
             url_search(value["-FILE-"])
 
         if event == "Formato" :
-            textBox = value["-FORMAT-"]        
+            textBox = value["-FORMAT-"]   
+            
+        if event == "Sobre":
+                openInfoWindow(filename,window)
+        if event == "Localização":
+                GPS(filename)        
            
             
     window.close()
