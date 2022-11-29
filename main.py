@@ -1,8 +1,16 @@
 
-from multiprocessing.sharedctypes import Value
-from turtle import position
-import PySimpleGUI as sg
+import io
 import os
+from turtle import color
+import PySimpleGUI as sg
+from PIL import Image
+import requests
+from PIL import ImageFilter
+from PIL.ExifTags import TAGS, GPSTAGS
+from pathlib import Path
+import webbrowser
+from PIL import ImageEnhance
+import shutil
 import tempfile
 
 sg.theme("DarkRed")
@@ -23,12 +31,7 @@ barra_menu = [
 
 ]
 
-
-
-
-
-
-
+tmp_file = tempfile.NamedTemporaryFile(suffix=".png").name
 
 def main():
     
@@ -45,16 +48,10 @@ def main():
     while True:
         event, value = window.read()
         if event =="Exit" or event == sg.WINDOW_CLOSED:
-            break
-        if event == "Carregar Imagem":
-            filename = value["-FILE-"]
-            if os.path.exists(filename):
-                image = Image.open(filename)
-                image.thumbnail((600,600))
-                bio = io.BytesIO()
-                image.save(bio,format="PNG")
-                window["-IMAGE-"].update(data=bio.getvalue())
+            break                
 
+        if event in ["Carregar","Carregar URL"]:
+               filename = open_image(tmp_file,event,window)    
                       
         if event == "Salvar Thumb":
             image_convert("calleri.jpg")#salvar thumbnail
@@ -95,6 +92,27 @@ def format_select(formato):
 
 def url_search(url):
     webbrowser.open(url)
+
+def open_image(temp_file,event,window):
+        if event == "Carregar":
+            filename = sg.popup_get_file('Carregue sua imagem')
+            image = Image.open(filename)
+            image.save(temp_file)
+            mostrar_imagem(image, window)
+        else:
+            url = sg.popup_get_text("URL")
+            image = requests.get(url)
+            image = Image.open(io.BytesIO(image.content))
+            temp_image2 = image.copy()
+            temp_image2.save("temp.png",format = "PNG",optmize = True)
+            mostrar_imagem(image, window)
+        return filename
+
+def mostrar_imagem(imagem, window):
+    bio = io.BytesIO()
+    imagem.save(bio, "PNG")
+    window["-IMAGE-"].erase()
+    window["-IMAGE-"].draw_image(data=bio.getvalue(), location=(0,400))            
 
 if __name__ == "__main__":
     main()
