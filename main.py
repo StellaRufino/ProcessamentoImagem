@@ -1,22 +1,13 @@
-
-import io
-import os
-from turtle import color
+from multiprocessing.sharedctypes import Value
+from turtle import position
 import PySimpleGUI as sg
-from PIL import Image
-import requests
-from PIL import ImageFilter
-from PIL.ExifTags import TAGS, GPSTAGS
-from pathlib import Path
-import webbrowser
-from PIL import ImageEnhance
-import shutil
+import os
+from funcoes import *
 import tempfile
 
 sg.theme("DarkRed")
 
-
-barra_menu = [
+menu_def = [
 ['Arquivo', ['Carregar', 'URL']],
 
 ['Salvar', ['Sem qualidade','Thumbnail',
@@ -29,93 +20,123 @@ barra_menu = [
 
 ['Ajuda', ['MetaDados','Localização']]
 
+
 ]
+
+esquerda=[
+  [sg.Frame(
+          layout=[
+            [sg.Graph(key="-IMAGE-", canvas_size=(500,500), graph_bottom_left=(0, 0),
+              graph_top_right=(400, 400), change_submits=True, drag_submits=True)],
+          ],
+        title="",
+        relief=sg.RELIEF_GROOVE,
+          )
+        ],
+]
+
+direita = [
+  [sg.Frame(
+          layout=[
+            [sg.Slider(range=(0, 5), default_value=2, resolution=0.1, orientation="h", enable_events=True, disabled= True,key="-SLIDER-")],
+            [sg.Text('X,Y INI:',text_color='WHITE',key="-INI-")],
+            [sg.Text('X,Y END:',text_color='WHITE',key="-END-")],
+            ],
+          title="",
+          relief=sg.RELIEF_GROOVE,
+          key="-FRAME_POSITION-",
+          )
+        ],
+      [sg.Button("Sobre", disabled=True, key="Metadados"),sg.Button("GPS", disabled=True, key="Localização")],
+]
+
+ld_esq = sg.Column(esquerda)
 
 tmp_file = tempfile.NamedTemporaryFile(suffix=".png").name
 
 def main():
-    
     layout = [
-            [sg.Menu(barra_menu)],
-     
-            [sg.Graph(key="-IMAGE-", canvas_size=(800,600), graph_bottom_left=(0, 0),
-                    graph_top_right=(400, 500), change_submits=True, drag_submits=True)],
-            
-        ]
-        
+        [sg.Menu(menu_def, background_color="DarkRed", text_color="white")],
+        [ld_esq,
+          sg.VSeperator(pad=(0, 0)),
+          sg.Column(direita),
+        ],
+    ]
+    window = sg.Window("Photoshop Pobre",layout = layout, size=(750,500))
+    dragging = False
+    ponto_INI = filename = ponto_END = retangulo = None
+    actualeffect = ''
     
-    window = sg.Window("Visualizador de Imagem", layout = layout)
     while True:
-        event, value = window.read()
-        if event =="Exit" or event == sg.WINDOW_CLOSED:
-            break                
+        event, values = window.read()
+        if event == "Exit" or event == sg.WINDOW_CLOSED:
+            break
+        try:
+            if event in ["Carregar","URL"]:
+                filename = abre_imagem(tmp_file,event,window)
+                
 
-        if event in ["Carregar","Carregar URL"]:
-               filename = open_image(tmp_file,event,window)    
-                      
-        if event == "Salvar Thumb":
-            image_convert("calleri.jpg")#salvar thumbnail
+            if event == "Redimensionar":
+                x = int(sg.popup_get_text("Coloque X"))
+                y = int(sg.popup_get_text("Coloque Y"))
+                resize(tmp_file,"RedimImage.png",(x,y))
 
-        if event == "Salvar Sem Qualidade" :
-            img_noQuality(value["-FILE-"], "calleri.png", "PNG")
+            if event == "Thumbnail":
+                save_thumbnail(tmp_file,"Thumbnail.png","png",75,75,75)
 
-        if event == "Pesquisar" :
-            url_search(value["-FILE-"])
-
-        if event == "Formato" :
-            textBox = value["-FORMAT-"]   
-            
-        if event == "Sobre":
+            if event == "Sem qualidade":
+                save_reduzida(tmp_file,"Reduzida.png")
+                
+            if event in ["JPEG","PNG","BMP"]:
+                image_converter(tmp_file,'saved',event)
+    
+            if event == "Metadados":
                 openInfoWindow(filename,window)
-        if event == "Localização":
-                GPS(filename)        
-           
+            if event == "Localização":
+                GPS(filename)
+
+            if event in ["Normal","P/B","QTD Cor","Sepia",
+            'Brilho','Cores','Contraste','Nitidez']:
+                actualeffect = event
+                window.Element("-SLIDER-").update(disabled = False,value = 2)
+                applyEffect(filename,tmp_file,actualeffect,values,window)
+
+                
+
+            if event in ['SBlur','BoxBlur','GaussianBlur','Contour',
+            'Edge Enhance','Emboss','Find Edges',
+            'TRANSPOSE','FLIP_TOP_BOTTOM','FLIP_LEFT_RIGHT']:
+                filter(tmp_file,event,window)
+
+            if event == "-SLIDER-":
+               applyEffect(filename,tmp_file,actualeffect,values,window)
             
+            if event == "-IMAGE-":
+                x, y = values["-IMAGE-"]
+                if not dragging:
+                    ponto_INI = (x, y)
+                    dragging = True
+                else:
+                    ponto_END = (x, y)
+                if retangulo:
+                    window["-IMAGE-"].delete_figure(retangulo)
+                if None not in (ponto_INI, ponto_END):
+                    retangulo = window["-IMAGE-"].draw_rectangle(ponto_INI, ponto_END, line_color='red')
+                    
+                    window.Element('-INI-').update(f'{ponto_INI}')
+                    window.Element('-END-').update(f'{ponto_END}')
+                    
+                    
+                
+            elif event.endswith('+UP'):
+                dragging = False
+    
+    
+        except Exception as e:
+            sg.popup_error(e)
+
     window.close()
 
 
-def image_convert(input_file):
-    imagem = Image.open(input_file)  #abre
-    imagem.thumbnail((75,75))
-    imagem.save("thumbnail.jpg")
-
-
-def img_noQuality(input_file, output_file, format):
-    imagem = Image.open(input_file)  #abre
-    imagem.save(output_file, format= format, optimize = True, quality = 1) #salva
-    imagem.thumbnail((600,600))
-    imagem.save("noQuality.jpg")
-    
-def format_select(formato):
-    formato = formato['values'] = ('jpg', 'png', 'GIF', 'bmp')
-    
-
-def url_search(url):
-    webbrowser.open(url)
-
-def open_image(temp_file,event,window):
-        if event == "Carregar":
-            filename = sg.popup_get_file('Carregue sua imagem')
-            image = Image.open(filename)
-            image.save(temp_file)
-            mostrar_imagem(image, window)
-        else:
-            url = sg.popup_get_text("URL")
-            image = requests.get(url)
-            image = Image.open(io.BytesIO(image.content))
-            temp_image2 = image.copy()
-            temp_image2.save("temp.png",format = "PNG",optmize = True)
-            mostrar_imagem(image, window)
-        return filename
-
-def mostrar_imagem(imagem, window):
-    bio = io.BytesIO()
-    imagem.save(bio, "PNG")
-    window["-IMAGE-"].erase()
-    window["-IMAGE-"].draw_image(data=bio.getvalue(), location=(0,400))            
-
 if __name__ == "__main__":
     main()
-    
-    
-
